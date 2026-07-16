@@ -3,122 +3,36 @@ import pandas as pd
 import requests
 
 # --- 1. PAGE SETUP ---
-st.set_page_config(page_title="Vibe Studio", page_icon="🎧", layout="centered")
+st.set_page_config(page_title="Music & Weather Matcher", page_icon="🌤️", layout="centered")
 
-# --- 2. MINIMALIST STUDIO CSS ---
-st.markdown("""
-    <style>
-    /* Deep matte background with a subtle data-grid pattern */
-    .stApp {
-        background-color: #121212;
-        background-image: 
-            linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
-        background-size: 30px 30px;
-        color: #ffffff;
-        font-family: 'Inter', sans-serif;
-    }
-    
-    /* Clean, editorial header */
-    .studio-title {
-        font-size: 42px;
-        font-weight: 300;
-        letter-spacing: -1px;
-        color: #ffffff;
-        text-align: center;
-        margin-bottom: 10px;
-    }
-    
-    /* Minimalist search bar */
-    .stTextInput > div > div > input {
-        border-radius: 8px !important;
-        border: 1px solid #333 !important;
-        background-color: #1a1a1a !important;
-        color: #ffffff !important;
-        padding: 18px !important;
-        font-size: 18px !important;
-        font-weight: 300;
-        transition: all 0.2s ease-in-out;
-    }
-    
-    .stTextInput > div > div > input:focus {
-        border: 1px solid #1DB954 !important;
-        box-shadow: none !important;
-    }
-    
-    /* Sleek 'Now Playing' style cards */
-    .studio-card {
-        background-color: #181818;
-        border: 1px solid #282828;
-        border-radius: 8px;
-        padding: 24px;
-        margin-bottom: 16px;
-        display: flex;
-        flex-direction: column;
-    }
-    
-    .track-name {
-        font-size: 22px;
-        font-weight: 600;
-        color: #ffffff;
-        margin: 0 0 8px 0;
-    }
-    
-    .artist-name {
-        font-size: 16px;
-        font-weight: 400;
-        color: #b3b3b3;
-        margin: 0;
-    }
-    
-    .vibe-tag {
-        display: inline-block;
-        background-color: #282828;
-        color: #b3b3b3;
-        padding: 4px 12px;
-        border-radius: 50px;
-        font-size: 12px;
-        font-weight: 500;
-        margin-top: 16px;
-        width: fit-content;
-    }
-    
-    /* Clean metric boxes */
-    .metric-container {
-        background-color: #181818;
-        border: 1px solid #282828;
-        border-radius: 8px;
-        padding: 20px;
-        text-align: center;
-    }
-    </style>
-""", unsafe_allow_html=True)
-
-st.markdown('<h1 class="studio-title">Atmosphere Analytics</h1>', unsafe_allow_html=True)
-st.write("<center style='color: #b3b3b3; font-weight: 300; margin-bottom: 30px;'>Input a global coordinate. Extract real-time climate and acoustic correlations.</center>", unsafe_allow_html=True)
-
-# --- 3. DATA PROCESSING ---
+# --- 2. LOAD DATA ---
 @st.cache_data
 def load_music():
     return pd.read_csv('dataset.csv')
 
 df = load_music()
 
+# Simple language for countries
 country_to_genre = {
     "India": "indian", "France": "french", "Germany": "german", "Spain": "spanish",
     "Mexico": "latino", "Japan": "j-pop", "South Korea": "k-pop", "Brazil": "brazil",
     "United Kingdom": "british",
 }
 
-# --- 4. APP INTERACTION ---
-city = st.text_input("", placeholder="Search city (e.g., Ahmedabad, London)...")
+# --- 3. DYNAMIC WHITE & COLORFUL UI ---
+# Default to a clean white background
+bg_color = "#ffffff"
+app_message = "Search for a city to see the magic!"
+text_color = "#ff4b4b" # Colorful default text!
+
+city = st.text_input("🔍 Type a City Name (like Tokyo, Paris, or Mumbai):", placeholder="Enter city name here...")
 
 if city:
     geo_url = f"https://geocoding-api.open-meteo.com/v1/search?name={city}&count=1&language=en&format=json"
     geo_response = requests.get(geo_url).json()
     
     if 'results' not in geo_response:
-        st.error("Location not found in global index.")
+        st.error("Oops! We couldn't find that city. Please try another one.")
     else:
         lat = geo_response['results'][0]['latitude']
         lon = geo_response['results'][0]['longitude']
@@ -128,40 +42,108 @@ if city:
         weather_data = requests.get(weather_url).json()
         current_temp = weather_data['current_weather']['temperature']
         
-        local_genre = country_to_genre.get(country, "pop")
-        genre_df = df[df['track_genre'] == local_genre] if 'track_genre' in df.columns else df
-        if genre_df.empty: genre_df = df
-        
-        # Determine the vibe for the UI tag
+        # Change background based on weather, but keep it light and bright!
         if current_temp > 25:
-            recs = genre_df[(genre_df['energy'] > 0.6)]
-            vibe_label = f"{current_temp}°C • High Energy"
+            bg_color = "linear-gradient(to right, #ffecd2 0%, #fcb69f 100%)" # Warm / Sunny
+            app_message = f"🔥 It is hot! {current_temp}°C in {city.title()}"
+            text_color = "#ff4500" # Orange-red text
+            recs = df[(df['energy'] > 0.6)]
         elif current_temp > 10:
-            recs = genre_df[genre_df['valence'] > 0.5]
-            vibe_label = f"{current_temp}°C • Elevated Valence"
+            bg_color = "linear-gradient(to right, #e0c3fc 0%, #8ec5fc 100%)" # Cool / Pleasant
+            app_message = f"🌤️ Nice and pleasant! {current_temp}°C in {city.title()}"
+            text_color = "#4a90e2" # Bright Blue text
+            recs = df[df['valence'] > 0.5]
         else:
-            recs = genre_df[(genre_df['energy'] < 0.5)]
-            vibe_label = f"{current_temp}°C • Acoustic / Chill"
+            bg_color = "linear-gradient(to right, #cfd9df 0%, #e2ebf0 100%)" # Cold / Snowy
+            app_message = f"❄️ Brrr, it is cold! {current_temp}°C in {city.title()}"
+            text_color = "#008b8b" # Dark Cyan text
+            recs = df[(df['energy'] < 0.5)]
 
-        # Minimalist Metrics
-        col1, col2 = st.columns(2)
-        with col1:
-            st.markdown(f"<div class='metric-container'><span style='color:#b3b3b3; font-size:14px;'>Target</span><br><span style='font-size:24px; color:#fff;'>{city.title()}, {country}</span></div>", unsafe_allow_html=True)
-        with col2:
-            st.markdown(f"<div class='metric-container'><span style='color:#b3b3b3; font-size:14px;'>Climate Parameter</span><br><span style='font-size:24px; color:#fff;'>{vibe_label}</span></div>", unsafe_allow_html=True)
-            
-        st.write("") # Spacer
+        # Apply custom CSS for the background and colorful text
+        st.markdown(f"""
+            <style>
+            .stApp {{
+                background: {bg_color};
+                color: #333333;
+            }}
+            .colorful-title {{
+                font-size: 45px;
+                font-weight: bold;
+                color: {text_color};
+                text-align: center;
+                margin-bottom: 10px;
+            }}
+            .colorful-subtitle {{
+                font-size: 25px;
+                color: {text_color};
+                text-align: center;
+                margin-bottom: 30px;
+                font-weight: bold;
+            }}
+            .white-card {{
+                background-color: white;
+                border-radius: 15px;
+                padding: 20px;
+                margin-bottom: 20px;
+                box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+                text-align: center;
+                border-top: 5px solid {text_color};
+            }}
+            .song-name {{
+                font-size: 24px;
+                font-weight: bold;
+                color: {text_color};
+                margin: 0;
+            }}
+            .artist-name {{
+                font-size: 18px;
+                color: #555555;
+                margin-top: 5px;
+            }}
+            </style>
+        """, unsafe_allow_html=True)
+
+        st.markdown('<div class="colorful-title">🌤️ Music & Weather Matcher</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="colorful-subtitle">{app_message}</div>', unsafe_allow_html=True)
         
-        # Display recommendations
-        if not recs.empty:
-            top_3 = recs.sample(min(3, len(recs)))
+        # Determine Local Genre
+        local_genre = country_to_genre.get(country, "pop")
+        genre_df = recs[recs['track_genre'] == local_genre] if 'track_genre' in recs.columns else recs
+        if genre_df.empty: genre_df = recs
+            
+        if not genre_df.empty:
+            top_3 = genre_df.sample(min(3, len(genre_df)))
             for index, row in top_3.iterrows():
                 st.markdown(f"""
-                <div class="studio-card">
-                    <p class="track-name">{row['track_name']}</p>
-                    <p class="artist-name">{row['artists']}</p>
-                    <div class="vibe-tag">Genre: {local_genre.title()}</div>
+                <div class="white-card">
+                    <p class="song-name">🎵 {row['track_name']}</p>
+                    <p class="artist-name">🎤 By: {row['artists']}</p>
+                    <p style="color: #888; font-size: 14px; margin-top: 10px;">Vibe: {local_genre.title()}</p>
                 </div>
                 """, unsafe_allow_html=True)
         else:
-            st.warning("Insufficient acoustic data for this coordinate.")
+            st.warning("We could not find the perfect song, try another city!")
+else:
+    # Default White UI before searching
+    st.markdown(f"""
+        <style>
+        .stApp {{
+            background-color: {bg_color};
+        }}
+        .colorful-title {{
+            font-size: 45px;
+            font-weight: bold;
+            color: #ff4b4b;
+            text-align: center;
+            margin-bottom: 10px;
+        }}
+        .colorful-subtitle {{
+            font-size: 20px;
+            color: #ff4b4b;
+            text-align: center;
+            margin-bottom: 30px;
+        }}
+        </style>
+    """, unsafe_allow_html=True)
+    st.markdown('<div class="colorful-title">🌤️ Music & Weather Matcher</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="colorful-subtitle">{app_message}</div>', unsafe_allow_html=True)
