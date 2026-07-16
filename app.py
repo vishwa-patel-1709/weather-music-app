@@ -2,89 +2,102 @@ import streamlit as st
 import pandas as pd
 import requests
 
-# --- 1. PAGE SETUP & NEON THEME ---
-st.set_page_config(page_title="Neon Vibe Check", page_icon="⚡", layout="centered")
+# --- 1. PAGE SETUP ---
+st.set_page_config(page_title="Vibe Studio", page_icon="🎧", layout="centered")
 
-# Injecting heavy custom CSS for a dark mode canvas with glowing neon borders
+# --- 2. MINIMALIST STUDIO CSS ---
 st.markdown("""
     <style>
-    /* Force the entire background to a sleek dark cyber canvas */
+    /* Deep matte background with a subtle data-grid pattern */
     .stApp {
-        background-color: #0d0e15 !important;
+        background-color: #121212;
+        background-image: 
+            linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+        background-size: 30px 30px;
+        color: #ffffff;
+        font-family: 'Inter', sans-serif;
     }
     
-    /* Make the title glow with a vibrant neon gradient */
-    .neon-title {
-        font-size: 50px !important;
-        font-weight: bold;
-        font-family: 'Courier New', Courier, monospace;
-        color: #fff;
+    /* Clean, editorial header */
+    .studio-title {
+        font-size: 42px;
+        font-weight: 300;
+        letter-spacing: -1px;
+        color: #ffffff;
         text-align: center;
-        text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 20px #00ffcc, 0 0 30px #00ffcc;
-        margin-bottom: 5px;
+        margin-bottom: 10px;
     }
     
-    /* Cyber styling for the subheader text */
-    .neon-sub {
-        text-align: center;
-        color: #ff007f;
-        font-family: 'Arial', sans-serif;
-        font-weight: bold;
-        letter-spacing: 2px;
-        text-shadow: 0 0 8px rgba(255, 0, 127, 0.6);
-        margin-bottom: 25px;
-    }
-    
-    /* Neon glow effect for the input search bar */
+    /* Minimalist search bar */
     .stTextInput > div > div > input {
-        border-radius: 10px !important;
-        border: 2px solid #00ffcc !important;
-        background-color: #161925 !important;
+        border-radius: 8px !important;
+        border: 1px solid #333 !important;
+        background-color: #1a1a1a !important;
         color: #ffffff !important;
-        box-shadow: 0 0 15px rgba(0, 255, 204, 0.4) !important;
-        padding: 15px !important;
-        font-size: 16px !important;
+        padding: 18px !important;
+        font-size: 18px !important;
+        font-weight: 300;
+        transition: all 0.2s ease-in-out;
     }
     
-    /* Futuristic Glassmorphic cards with glowing hot pink borders */
-    .neon-card {
-        background: rgba(22, 25, 37, 0.85);
-        border: 2px solid #ff007f;
-        border-radius: 12px;
+    .stTextInput > div > div > input:focus {
+        border: 1px solid #1DB954 !important;
+        box-shadow: none !important;
+    }
+    
+    /* Sleek 'Now Playing' style cards */
+    .studio-card {
+        background-color: #181818;
+        border: 1px solid #282828;
+        border-radius: 8px;
+        padding: 24px;
+        margin-bottom: 16px;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .track-name {
+        font-size: 22px;
+        font-weight: 600;
+        color: #ffffff;
+        margin: 0 0 8px 0;
+    }
+    
+    .artist-name {
+        font-size: 16px;
+        font-weight: 400;
+        color: #b3b3b3;
+        margin: 0;
+    }
+    
+    .vibe-tag {
+        display: inline-block;
+        background-color: #282828;
+        color: #b3b3b3;
+        padding: 4px 12px;
+        border-radius: 50px;
+        font-size: 12px;
+        font-weight: 500;
+        margin-top: 16px;
+        width: fit-content;
+    }
+    
+    /* Clean metric boxes */
+    .metric-container {
+        background-color: #181818;
+        border: 1px solid #282828;
+        border-radius: 8px;
         padding: 20px;
-        margin-bottom: 20px;
-        box-shadow: 0 0 15px rgba(255, 0, 127, 0.4);
-        transition: all 0.3s ease;
-    }
-    
-    .neon-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 0 25px rgba(255, 0, 127, 0.8), 0 0 10px #fff;
-    }
-    
-    /* Dynamic Weather Badge styles */
-    .badge-hot {
-        color: #ff3333;
-        text-shadow: 0 0 10px #ff3333;
-        font-weight: bold;
-    }
-    .badge-pleasant {
-        color: #33ff33;
-        text-shadow: 0 0 10px #33ff33;
-        font-weight: bold;
-    }
-    .badge-cold {
-        color: #33ccff;
-        text-shadow: 0 0 10px #33ccff;
-        font-weight: bold;
+        text-align: center;
     }
     </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<p class="neon-title">⚡ NEON VIBE CHECK ⚡</p>', unsafe_allow_html=True)
-st.markdown('<p class="neon-sub">REAL-TIME WEATHER X GLOBAL AUDIO LOGIC</p>', unsafe_allow_html=True)
+st.markdown('<h1 class="studio-title">Atmosphere Analytics</h1>', unsafe_allow_html=True)
+st.write("<center style='color: #b3b3b3; font-weight: 300; margin-bottom: 30px;'>Input a global coordinate. Extract real-time climate and acoustic correlations.</center>", unsafe_allow_html=True)
 
-# --- 2. DATA PROCESSING ---
+# --- 3. DATA PROCESSING ---
 @st.cache_data
 def load_music():
     return pd.read_csv('dataset.csv')
@@ -92,28 +105,20 @@ def load_music():
 df = load_music()
 
 country_to_genre = {
-    "India": "indian",
-    "France": "french",
-    "Germany": "german",
-    "Spain": "spanish",
-    "Mexico": "latino",
-    "Japan": "j-pop",
-    "South Korea": "k-pop",
-    "Brazil": "brazil",
-    "Turkey": "turkish",
-    "Sweden": "swedish",
+    "India": "indian", "France": "french", "Germany": "german", "Spain": "spanish",
+    "Mexico": "latino", "Japan": "j-pop", "South Korea": "k-pop", "Brazil": "brazil",
     "United Kingdom": "british",
 }
 
-# --- 3. RUNTIME APP INTERACTION ---
-city = st.text_input("", placeholder="⌨️ ENTER SYSTEM CITY TARGET (e.g., AHMEDABAD, CHICAGO, TOKYO)...")
+# --- 4. APP INTERACTION ---
+city = st.text_input("", placeholder="Search city (e.g., Ahmedabad, London)...")
 
 if city:
     geo_url = f"https://geocoding-api.open-meteo.com/v1/search?name={city}&count=1&language=en&format=json"
     geo_response = requests.get(geo_url).json()
     
     if 'results' not in geo_response:
-        st.error(f"❌ ERROR: TARGET LOCATION '{city.upper()}' NOT FOUND.")
+        st.error("Location not found in global index.")
     else:
         lat = geo_response['results'][0]['latitude']
         lon = geo_response['results'][0]['longitude']
@@ -123,40 +128,40 @@ if city:
         weather_data = requests.get(weather_url).json()
         current_temp = weather_data['current_weather']['temperature']
         
-        # Configure localized genres
         local_genre = country_to_genre.get(country, "pop")
         genre_df = df[df['track_genre'] == local_genre] if 'track_genre' in df.columns else df
         if genre_df.empty: genre_df = df
         
-        # Map out text style variables dynamically depending on climate data
+        # Determine the vibe for the UI tag
         if current_temp > 25:
-            status_badge = f"<span class='badge-hot'>CRITICAL HEAT // {current_temp}°C</span>"
             recs = genre_df[(genre_df['energy'] > 0.6)]
+            vibe_label = f"{current_temp}°C • High Energy"
         elif current_temp > 10:
-            status_badge = f"<span class='badge-pleasant'>OPTIMAL VIBE // {current_temp}°C</span>"
             recs = genre_df[genre_df['valence'] > 0.5]
+            vibe_label = f"{current_temp}°C • Elevated Valence"
         else:
-            status_badge = f"<span class='badge-cold'>CRYOGENIC STATE // {current_temp}°C</span>"
-            st.snow()
             recs = genre_df[(genre_df['energy'] < 0.5)]
+            vibe_label = f"{current_temp}°C • Acoustic / Chill"
 
-        # Display Live Metric Indicators inside a dark slate format
-        st.markdown(f"""
-        <div style='background-color:#161925; padding:15px; border-radius:10px; border:1px solid #00ffcc; margin-bottom:25px; text-align:center;'>
-            <span style='color:#fff; font-family:monospace;'>[ LOCATION: {city.upper()} ] &nbsp;&nbsp;&nbsp;&nbsp; [ CLIMATE: {status_badge} ] &nbsp;&nbsp;&nbsp;&nbsp; [ REGION GENRE: {local_genre.upper()} ]</span>
-        </div>
-        """, unsafe_allow_html=True)
+        # Minimalist Metrics
+        col1, col2 = st.columns(2)
+        with col1:
+            st.markdown(f"<div class='metric-container'><span style='color:#b3b3b3; font-size:14px;'>Target</span><br><span style='font-size:24px; color:#fff;'>{city.title()}, {country}</span></div>", unsafe_allow_html=True)
+        with col2:
+            st.markdown(f"<div class='metric-container'><span style='color:#b3b3b3; font-size:14px;'>Climate Parameter</span><br><span style='font-size:24px; color:#fff;'>{vibe_label}</span></div>", unsafe_allow_html=True)
+            
+        st.write("") # Spacer
         
-        # Pull 3 recommendation samples and frame them in glowing pink containers
+        # Display recommendations
         if not recs.empty:
             top_3 = recs.sample(min(3, len(recs)))
             for index, row in top_3.iterrows():
                 st.markdown(f"""
-                <div class="neon-card">
-                    <h2 style="margin:0; color: #00ffcc; font-family: monospace; text-shadow: 0 0 5px rgba(0,255,204,0.5);">🎵 {row['track_name']}</h2>
-                    <p style="font-size: 18px; margin: 8px 0 0 0; color: #ffffff; font-family: sans-serif;">🎤 ARTIST: <b>{row['artists']}</b></p>
-                    <p style="font-size: 12px; margin: 12px 0 0 0; color: #ff007f; font-family: monospace; letter-spacing:1px;">⚡ ALGORITHMIC PLAYLIST FEED MATCH</p>
+                <div class="studio-card">
+                    <p class="track-name">{row['track_name']}</p>
+                    <p class="artist-name">{row['artists']}</p>
+                    <div class="vibe-tag">Genre: {local_genre.title()}</div>
                 </div>
                 """, unsafe_allow_html=True)
         else:
-            st.warning("⚠️ CRITICAL OVERRIDE: DATASET CAPACITIES EXHAUSTED FOR CURRENT CLIMATE RANGE.")
+            st.warning("Insufficient acoustic data for this coordinate.")
