@@ -3,6 +3,7 @@ import pandas as pd
 import requests
 from datetime import datetime
 import urllib.parse
+import pytz  # NEW: Added for exact time zone calculations
 
 # --- 1. PAGE SETUP ---
 st.set_page_config(page_title="Global Vibe Sync", page_icon="🎛️", layout="wide")
@@ -45,17 +46,20 @@ if user_input:
         lon = geo_response['results'][0]['longitude']
         resolved_city = geo_response['results'][0]['name']
         country = geo_response['results'][0].get('country', 'Unknown Location')
+        # Grab the exact timezone string (e.g., 'Europe/Paris')
+        timezone_str = geo_response['results'][0].get('timezone', 'UTC')
         
         # Fetch weather
-        weather_url = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&current_weather=true&timezone=auto"
+        weather_url = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&current_weather=true"
         weather_data = requests.get(weather_url).json()
         
         current_temp_c = weather_data['current_weather']['temperature']
         current_temp_f = round((current_temp_c * 9/5) + 32, 1)
         
-        raw_time = weather_data['current_weather']['time']
+        # --- NEW EXACT TIME LOGIC ---
         try:
-            local_time_obj = datetime.strptime(raw_time, "%Y-%m-%dT%H:%M")
+            target_tz = pytz.timezone(timezone_str)
+            local_time_obj = datetime.now(target_tz)
             local_time_formatted = local_time_obj.strftime("%I:%M %p")
         except Exception:
             local_time_formatted = "Live"
@@ -204,7 +208,6 @@ if user_input:
             
             st.markdown(f"<h3 style='text-align: center; color: #333; margin-bottom: 25px;'>Top {len(top_tracks)} Matches for {local_genre.title()}</h3>", unsafe_allow_html=True)
             
-            # Use Streamlit columns to make a beautiful 2-column grid for the songs
             col1, col2 = st.columns(2)
             
             for index, (i, row) in enumerate(top_tracks.iterrows()):
@@ -212,11 +215,9 @@ if user_input:
                 spotify_url = f"https://open.spotify.com/search/{search_query}"
                 youtube_url = f"https://www.youtube.com/results?search_query={search_query}"
                 
-                # Format metrics for the progress bars (Convert 0.75 to 75%)
                 energy_pct = int(row.get('energy', 0.5) * 100)
                 happiness_pct = int(row.get('valence', 0.5) * 100)
                 
-                # FIXED HTML BLOCK: No indentation to prevent Markdown code block issues
                 card_html = f"""<div class="music-card" style="animation-delay: {index * 0.15}s;">
 <h3 style="margin: 0 0 5px 0; color: #222; font-size: 22px;">🎵 {row['track_name']}</h3>
 <p style="margin: 0 0 15px 0; color: #666; font-size: 16px;">🎤 {row['artists']}</p>
@@ -230,7 +231,6 @@ if user_input:
 </div>
 </div>"""
                 
-                # Distribute the 10 cards evenly between the two columns
                 if index % 2 == 0:
                     with col1:
                         st.markdown(card_html, unsafe_allow_html=True)
