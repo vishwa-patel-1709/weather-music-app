@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import requests
 from datetime import datetime
+import urllib.parse
 
 # --- 1. PAGE SETUP ---
 st.set_page_config(page_title="Vibe & Weather Matcher", page_icon="🎧", layout="centered")
@@ -13,10 +14,12 @@ def load_music():
 
 df = load_music()
 
+# Expanded dictionary for local music vibes
 country_to_genre = {
     "India": "indian", "France": "french", "Germany": "german", "Spain": "spanish",
     "Mexico": "latino", "Japan": "j-pop", "South Korea": "k-pop", "Brazil": "brazil",
-    "United Kingdom": "british", "United States": "pop"
+    "United Kingdom": "british", "United States": "pop", "Canada": "pop", 
+    "Italy": "italian", "Sweden": "swedish", "Turkey": "turkish"
 }
 
 # --- 3. DYNAMIC UI & ANIMATIONS LOGIC ---
@@ -26,38 +29,11 @@ app_message = "Type a city to unlock the vibes!"
 text_color = "#845EC2" 
 accent_color = "#FF9671"
 
-st.markdown("""
-    <style>
-    /* Floating Music Notes Animation */
-    @keyframes floatNotes {
-        0% { transform: translateY(100vh) rotate(0deg); opacity: 1; }
-        100% { transform: translateY(-20vh) rotate(360deg); opacity: 0; }
-    }
-    .music-note {
-        position: fixed;
-        color: rgba(255, 255, 255, 0.6);
-        font-size: 30px;
-        animation: floatNotes 10s linear infinite;
-        z-index: 0;
-    }
-    .note-1 { left: 10%; animation-duration: 8s; animation-delay: 1s; }
-    .note-2 { left: 30%; animation-duration: 12s; animation-delay: 3s; font-size: 40px; }
-    .note-3 { left: 70%; animation-duration: 9s; animation-delay: 0s; font-size: 25px; }
-    .note-4 { left: 85%; animation-duration: 11s; animation-delay: 2s; font-size: 35px; }
-    </style>
-    <div class="music-note note-1">🎵</div>
-    <div class="music-note note-2">🎶</div>
-    <div class="music-note note-3">🎧</div>
-    <div class="music-note note-4">🎸</div>
-""", unsafe_allow_html=True)
-
-# Smart Search Bar (Allows "City" or "City, Country")
+# --- SMART SEARCH BAR ---
 user_input = st.text_input("🔍 Search City or 'City, Country' (e.g., Paris, France):", placeholder="Enter location here...")
 
 if user_input:
-    # If the user types a comma, we grab the first part for the API to ensure a safe search
     search_city = user_input.split(',')[0].strip()
-    
     geo_url = f"https://geocoding-api.open-meteo.com/v1/search?name={search_city}&count=1&language=en&format=json"
     geo_response = requests.get(geo_url).json()
     
@@ -69,19 +45,17 @@ if user_input:
         resolved_city = geo_response['results'][0]['name']
         country = geo_response['results'][0].get('country', 'Unknown Location')
         
-        # Fetch weather WITH automatic timezone handling
+        # Fetch weather
         weather_url = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&current_weather=true&timezone=auto"
         weather_data = requests.get(weather_url).json()
         
-        # Temperature Logic (Celsius & Fahrenheit)
         current_temp_c = weather_data['current_weather']['temperature']
         current_temp_f = round((current_temp_c * 9/5) + 32, 1)
         
-        # Time Logic
-        raw_time = weather_data['current_weather']['time'] # Format: 2023-10-25T14:00
+        raw_time = weather_data['current_weather']['time']
         try:
             local_time_obj = datetime.strptime(raw_time, "%Y-%m-%dT%H:%M")
-            local_time_formatted = local_time_obj.strftime("%I:%M %p") # Converts to 02:30 PM
+            local_time_formatted = local_time_obj.strftime("%I:%M %p")
         except Exception:
             local_time_formatted = "Live"
         
@@ -105,7 +79,7 @@ if user_input:
             accent_color = "#4CA1AF"
             recs = df[(df['energy'] < 0.5)]
 
-        # --- FANCY CSS ANIMATIONS & TRANSITIONS ---
+        # --- ADVANCED CSS ANIMATIONS & TRANSITIONS ---
         st.markdown(f"""
             <style>
             @keyframes gradientShift {{
@@ -126,56 +100,80 @@ if user_input:
                 text-align: center;
                 margin-bottom: 5px;
                 text-shadow: 2px 2px 8px rgba(0,0,0,0.2);
-                position: relative;
-                z-index: 10;
             }}
             
             .weather-dashboard {{
-                background: rgba(255, 255, 255, 0.9);
+                background: rgba(255, 255, 255, 0.95);
                 border-radius: 20px;
                 padding: 20px;
                 text-align: center;
                 box-shadow: 0px 10px 30px rgba(0,0,0,0.1);
                 margin-bottom: 30px;
                 border: 3px solid {accent_color};
-                position: relative;
-                z-index: 10;
             }}
             
             .metric-text {{
-                font-size: 22px;
+                font-size: 20px;
                 font-weight: bold;
                 color: {text_color};
                 margin: 5px 0;
             }}
             
-            @keyframes slideUp {{
-                from {{ opacity: 0; transform: translateY(30px); }}
-                to {{ opacity: 1; transform: translateY(0); }}
+            @keyframes slideUpFade {{
+                from {{ opacity: 0; transform: translateY(40px) scale(0.95); }}
+                to {{ opacity: 1; transform: translateY(0) scale(1); }}
             }}
             
-            .white-card {{
+            .vibe-card {{
                 background-color: #ffffff;
                 border-radius: 15px;
                 padding: 20px;
                 margin-bottom: 20px;
-                text-align: center;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
                 border-left: 8px solid {accent_color};
                 box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.1);
                 opacity: 0; 
-                animation: slideUp 0.6s ease forwards;
-                transition: transform 0.3s ease;
-                position: relative;
-                z-index: 10;
+                animation: slideUpFade 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+                transition: transform 0.3s ease, box-shadow 0.3s ease;
             }}
             
-            .white-card:hover {{
-                transform: scale(1.03);
-                box-shadow: 0px 10px 25px rgba(0, 0, 0, 0.15);
+            .vibe-card:hover {{
+                transform: translateY(-5px) scale(1.02);
+                box-shadow: 0px 15px 30px rgba(0, 0, 0, 0.2);
             }}
             
-            .song-name {{ font-size: 24px; font-weight: 900; color: {text_color}; margin: 0; }}
-            .artist-name {{ font-size: 18px; color: #555; margin-top: 5px; font-weight: bold; }}
+            .song-info {{
+                flex: 1;
+            }}
+            
+            .song-name {{ font-size: 22px; font-weight: 900; color: {text_color}; margin: 0; }}
+            .artist-name {{ font-size: 16px; color: #555; margin-top: 5px; font-weight: bold; }}
+            
+            .btn-container {{
+                display: flex;
+                gap: 10px;
+                flex-direction: column;
+            }}
+            
+            .listen-btn {{
+                text-decoration: none;
+                padding: 10px 15px;
+                border-radius: 30px;
+                font-weight: bold;
+                font-size: 14px;
+                text-align: center;
+                transition: all 0.3s ease;
+                color: white !important;
+            }}
+            
+            .spotify-btn {{ background-color: #1DB954; box-shadow: 0px 4px 10px rgba(29, 185, 84, 0.4); }}
+            .spotify-btn:hover {{ background-color: #1ed760; transform: scale(1.05); }}
+            
+            .youtube-btn {{ background-color: #FF0000; box-shadow: 0px 4px 10px rgba(255, 0, 0, 0.4); }}
+            .youtube-btn:hover {{ background-color: #ff3333; transform: scale(1.05); }}
+            
             </style>
         """, unsafe_allow_html=True)
 
@@ -185,27 +183,40 @@ if user_input:
         st.markdown(f"""
         <div class="weather-dashboard">
             <h2 style="margin:0; color: {text_color}; font-weight: 900;">{app_message}</h2>
-            <p class="metric-text">📍 {resolved_city}, {country}</p>
-            <p class="metric-text">🕒 Local Time: {local_time_formatted}</p>
-            <p class="metric-text">🌡️ Temperature: {current_temp_c}°C / {current_temp_f}°F</p>
+            <p class="metric-text">📍 {resolved_city}, {country} &nbsp;|&nbsp; 🕒 Local Time: {local_time_formatted}</p>
+            <p class="metric-text" style="font-size: 26px;">🌡️ {current_temp_c}°C / {current_temp_f}°F</p>
         </div>
         """, unsafe_allow_html=True)
         
+        # Determine Local Genre
         local_genre = country_to_genre.get(country, "pop")
         genre_df = recs[recs['track_genre'] == local_genre] if 'track_genre' in recs.columns else recs
         if genre_df.empty: genre_df = recs
             
+        # PULL 10 SONGS
         if not genre_df.empty:
-            top_3 = genre_df.sample(min(3, len(genre_df)))
+            top_10 = genre_df.sample(min(10, len(genre_df)))
             
-            for index, (i, row) in enumerate(top_3.iterrows()):
+            st.markdown(f"<h3 style='color: white; text-align: center; text-shadow: 1px 1px 4px rgba(0,0,0,0.2);'>Top 10 {local_genre.title()} Matches</h3>", unsafe_allow_html=True)
+            
+            for index, (i, row) in enumerate(top_10.iterrows()):
+                # Create secure URL search queries for Spotify and YouTube
+                search_query = urllib.parse.quote(f"{row['track_name']} {row['artists']}")
+                spotify_link = f"https://open.spotify.com/search/{search_query}"
+                youtube_link = f"https://www.youtube.com/results?search_query={search_query}"
+                
+                # HTML for the card with built-in buttons
                 st.markdown(f"""
-                <div class="white-card" style="animation-delay: {index * 0.15}s;">
-                    <p class="song-name">🎵 {row['track_name']}</p>
-                    <p class="artist-name">🎤 By: {row['artists']}</p>
-                    <p style="color: {accent_color}; font-size: 14px; font-weight: bold; margin-top: 10px;">
-                        Regional Vibe: {local_genre.title()}
-                    </p>
+                <div class="vibe-card" style="animation-delay: {index * 0.1}s;">
+                    <div class="song-info">
+                        <p class="song-name">🎵 {row['track_name']}</p>
+                        <p class="artist-name">🎤 {row['artists']}</p>
+                        <p style="color: {accent_color}; font-size: 13px; font-weight: bold; margin-top: 5px;">Vibe: {local_genre.title()}</p>
+                    </div>
+                    <div class="btn-container">
+                        <a href="{spotify_link}" target="_blank" class="listen-btn spotify-btn">🎧 Spotify</a>
+                        <a href="{youtube_link}" target="_blank" class="listen-btn youtube-btn">▶️ YouTube</a>
+                    </div>
                 </div>
                 """, unsafe_allow_html=True)
         else:
@@ -231,8 +242,6 @@ else:
             text-align: center;
             margin-bottom: 10px;
             text-shadow: 2px 2px 8px rgba(0,0,0,0.2);
-            position: relative;
-            z-index: 10;
         }}
         .colorful-subtitle {{
             font-size: 24px;
@@ -240,8 +249,6 @@ else:
             text-align: center;
             font-weight: bold;
             text-shadow: 1px 1px 4px rgba(0,0,0,0.2);
-            position: relative;
-            z-index: 10;
         }}
         </style>
     """, unsafe_allow_html=True)
