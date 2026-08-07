@@ -216,23 +216,19 @@ if user_input:
                 energy_pct = int(row.get('energy', 0.5) * 100)
                 happiness_pct = int(row.get('valence', 0.5) * 100)
                 
-                card_html = f"""
-                <div class="music-card" style="animation-delay: {index * 0.15}s;">
-                    <h3 style="margin: 0 0 5px 0; color: #222; font-size: 22px;">🎵 {row['track_name']}</h3>
-                    <p style="margin: 0 0 15px 0; color: #666; font-size: 16px;">🎤 {row['artists']}</p>
-                    
-                    <div class="metric-label">Audio Energy ({energy_pct}%)</div>
-                    <div class="progress-bg"><div class="progress-fill" style="width: {energy_pct}%;"></div></div>
-                    
-                    <div class="metric-label">Vibe / Happiness ({happiness_pct}%)</div>
-                    <div class="progress-bg"><div class="progress-fill" style="width: {happiness_pct}%; background-color: #FFA500;"></div></div>
-                    
-                    <div>
-                        <a href="{spotify_url}" target="_blank" class="btn-link btn-spotify">🎧 Listen on Spotify</a>
-                        <a href="{youtube_url}" target="_blank" class="btn-link btn-youtube">▶️ Watch on YouTube</a>
-                    </div>
-                </div>
-                """
+                # FIXED HTML BLOCK: No indentation to prevent Markdown code block issues
+                card_html = f"""<div class="music-card" style="animation-delay: {index * 0.15}s;">
+<h3 style="margin: 0 0 5px 0; color: #222; font-size: 22px;">🎵 {row['track_name']}</h3>
+<p style="margin: 0 0 15px 0; color: #666; font-size: 16px;">🎤 {row['artists']}</p>
+<div class="metric-label">Audio Energy ({energy_pct}%)</div>
+<div class="progress-bg"><div class="progress-fill" style="width: {energy_pct}%;"></div></div>
+<div class="metric-label">Vibe / Happiness ({happiness_pct}%)</div>
+<div class="progress-bg"><div class="progress-fill" style="width: {happiness_pct}%; background-color: #FFA500;"></div></div>
+<div style="margin-top: 15px;">
+<a href="{spotify_url}" target="_blank" class="btn-link btn-spotify">🎧 Listen on Spotify</a>
+<a href="{youtube_url}" target="_blank" class="btn-link btn-youtube">▶️ Watch on YouTube</a>
+</div>
+</div>"""
                 
                 # Distribute the 10 cards evenly between the two columns
                 if index % 2 == 0:
